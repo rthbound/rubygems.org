@@ -16,13 +16,13 @@ class Hostess < Sinatra::Base
 
   def serve_via_s3(content_type)
     serve(content_type) do
-      redirect VaultObject.s3_url_for(request.path_info)
+      redirect Vault.s3_url_for(request.path_info)
     end
   end
 
   def serve_via_cf(content_type)
     serve(content_type) do
-      redirect VaultObject.cf_url_for(request.path_info)
+      redirect Vault.cf_url_for(request.path_info)
     end
   end
 
@@ -35,8 +35,7 @@ class Hostess < Sinatra::Base
     end
   end
 
-  %w[/quick/rubygems-update-1.3.6.gemspec.rz
-     /yaml.Z
+  %w[/yaml.Z
      /yaml.z
      /Marshal.4.8.Z
      /quick/index.rz
@@ -66,7 +65,7 @@ class Hostess < Sinatra::Base
 
   get "/quick/Marshal.4.8/*.gemspec.rz" do
     if Version.rubygem_name_for(full_name)
-      serve_via_s3('application/x-deflate')
+      serve_via_cf('application/x-deflate')
     else
       error 404, "This gem does not currently live at Gemcutter."
     end
@@ -74,7 +73,7 @@ class Hostess < Sinatra::Base
 
   get "/gems/*.gem" do
     if Rails.env.maintenance?
-      serve_via_cf
+      serve_via_cf('application/x-gzip')
     else
       if name = Version.rubygem_name_for(full_name)
         Download.incr(name, full_name)

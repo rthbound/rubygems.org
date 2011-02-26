@@ -67,7 +67,7 @@ class Version < ActiveRecord::Base
   end
 
   def self.published(limit=5)
-    where("built_at <= ?", DateTime.now.utc).order("built_at desc").limit(limit)
+    where("built_at <= ? and indexed", DateTime.now.utc).order("built_at desc").limit(limit)
   end
 
   def self.find_from_slug!(rubygem_id, slug)
@@ -92,7 +92,7 @@ class Version < ActiveRecord::Base
   end
 
   def update_prerelease
-    self[:prerelease] = to_gem_version.prerelease?
+    self[:prerelease] = !!to_gem_version.prerelease?
     true
   end
 

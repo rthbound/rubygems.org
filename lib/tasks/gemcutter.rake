@@ -1,4 +1,15 @@
 namespace :gemcutter do
+  desc "Reorder gem versions"
+  task :reorder_versions => :environment do
+    current = 1
+    count   = Rubygem.count
+    Rubygem.find_each do |rubygem|
+      puts "Reordering #{current}/#{count} - #{rubygem.name}"
+      rubygem.reorder_versions
+      current += 1
+    end
+  end
+
   desc "Store legacy index"
   task :store_legacy_index => :environment do
     puts "Loading up versions..."
@@ -11,13 +22,13 @@ namespace :gemcutter do
 
     puts "Uploading to S3..."
     class Uploader
-      include Vault::S3
+      include Vault
     end
-    file = Uploader.new.directory.files.new(
-      :body => Gem.deflate(Marshal.dump(index)),
-      :key  => "Marshal.4.8.Z"
+    file = Uploader.new.directory.files.create(
+      :body   => Gem.deflate(Marshal.dump(index)),
+      :key    => "Marshal.4.8.Z",
+      :public => true
     )
-    file.save('x-amz-acl' => 'public-read')
 
     puts "Ding, legacy index is done!"
   end
@@ -43,64 +54,9 @@ namespace :gemcutter do
         b.report("   pre index") { g.upload("prerelease_specs.4.8.gz", g.prerelease_index) }
       end
     end
-
-    desc "fix the index"
-    task :reprocess => :environment do
-      index = Gem::SourceIndex.new
-
-      Rubygem.with_versions.each do |rubygem|
-        rubygem.versions.each do |version|
-
-          install = "#{rubygem.name}-#{version.number}"
-          quick_path = "quick/Marshal.#{Gem.marshal_version}/#{install}.gemspec.rz"
-
-          if VaultObject.exists?(quick_path)
-            puts ">> Processing #{install}"
-            begin
-              spec = Marshal.load(Gem.inflate(VaultObject.value(quick_path)))
-            rescue Exception => e
-              puts ">> EXCEPTION: #{e}"
-              version.update_attribute(:indexed, false)
-            end
-
-            version.description = spec.description
-            version.summary = spec.summary
-            version.number = spec.version.to_s
-
-            platform = spec.original_platform
-            platform = Gem::Platform::RUBY if platform.nil? or platform.empty?
-            version.platform = platform
-            version.save
-
-            spec.development_dependencies.each { |dep| version.dependencies.create_from_gem_dependency!(dep) }
-
-            index.add_spec(spec)
-          else
-            puts ">> BAD GEM: #{install}"
-            version.update_attribute(:indexed, false)
-          end
-        end
-      end
-
-      puts ">> ding, gems are done!"
-      File.open("/tmp/index", "wb") { |f| f.write Marshal.dump(index) }
-    end
   end
 
   namespace :import do
-    desc 'Make sure all of the gems are on S3'
-    task :verify => :environment do
-      return unless Rails.env.production?
-      Version.all.each do |version|
-        path = "#{version.rubygem.name}-#{version.number}.gem"
-        gem_path = "gems/#{path}"
-        spec_path = "quick/Marshal.4.8/#{path}spec.rz"
-
-        puts gem_path unless VaultObject.exists?(gem_path)
-        puts spec_path unless VaultObject.exists?(spec_path)
-      end
-    end
-
     desc 'Upload gems to s3 like a boss'
     task :upload => :environment do
       return unless Rails.env.production?
@@ -166,6 +122,38 @@ namespace :gemcutter do
       end
 
       Pusher.indexer.update_index(source_index)
+    end
+  end
+
+  namespace :rubygems do
+    desc "update rubygems. run as: rake gemcutter:rubygems:update VERSION=[version number] RAILS_ENV=[staging|production] S3_KEY=[key] S3_SECRET=[secret]"
+    task :update => :environment do
+      version     = ENV["VERSION"]
+      app_path    = Rails.root.join("config", "application.rb")
+      old_content = app_path.read
+      new_content = old_content.gsub(/RUBYGEMS_VERSION = "(.*)"/, %{RUBYGEMS_VERSION = "#{version}"})
+
+      app_path.open("w") do |file|
+        file.write new_content
+      end
+
+      class Updater
+        include Vault
+      end
+
+      updater = Updater.new
+      html    = Nokogiri.parse(open("http://rubyforge.org/frs/?group_id=126"))
+      links   = html.css("a[href*='#{version}']").map { |n| n["href"] }
+      links.each do |link|
+        url = "http://rubyforge.org#{link}"
+
+        puts "Uploading #{url}..."
+        updater.directory.files.create({
+          :body   => open(url).read,
+          :key    => "rubygems/#{File.basename(url)}",
+          :public => true
+        })
+      end
     end
   end
 end

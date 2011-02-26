@@ -42,13 +42,13 @@ class Download
   end
 
   def self.counts_by_day_for_versions(versions, days)
-    dates = (days.days.ago.to_date...Date.today).map &:to_s
+    dates = (days.days.ago.to_date...Date.current).map &:to_s
 
     versions.inject({}) do |downloads, version|
       $redis.hmget(self.history_key(version), *dates).each_with_index do |count, idx|
         downloads["#{version.id}-#{dates[idx]}"] = count.to_i
       end
-      downloads["#{version.id}-#{Date.today}"] = self.today(version)
+      downloads["#{version.id}-#{Date.current}"] = self.today(version)
       downloads
     end
   end
@@ -82,10 +82,11 @@ class Download
 
     downloads = Hash[*$redis.zrange(YESTERDAY_KEY, 0, -1, :with_scores => true)]
     downloads.each do |key, score|
-      version = versions[key]
-      $redis.hincrby history_key(version), yesterday, score.to_i
-      $redis.hincrby history_key(version.rubygem), yesterday, score.to_i
-      version.rubygem.increment! :downloads, score.to_i
+      if version = versions[key]
+        $redis.hincrby history_key(version), yesterday, score.to_i
+        $redis.hincrby history_key(version.rubygem), yesterday, score.to_i
+        version.rubygem.increment! :downloads, score.to_i
+      end
     end
   end
 

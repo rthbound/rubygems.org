@@ -30,7 +30,6 @@ class HostessTest < ActiveSupport::TestCase
      /quick/index.rz
      /quick/latest_index
      /quick/latest_index.rz
-     /quick/rubygems-update-1.3.6.gemspec.rz
      /yaml
      /yaml.Z
      /yaml.z
@@ -64,10 +63,10 @@ class HostessTest < ActiveSupport::TestCase
       assert_equal 1, @version.reload.downloads_count
     end
 
-    should "redirect to cf for a gem" do
+    should "redirect to cdn for a gem" do
       get @file
 
-      assert_equal "http://test.cf.rubygems.org#{@file}", last_response.headers["Location"]
+      assert_equal "http://#{$rubygems_config[:cf_domain]}#{@file}", last_response.headers["Location"]
       assert_equal 302, last_response.status
     end
   end
