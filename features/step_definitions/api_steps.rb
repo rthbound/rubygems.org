@@ -1,8 +1,8 @@
 Given /^I have an api key for "([^\"]*)"$/ do |creds|
   user, pass = creds.split('/')
-  basic_auth(user, pass)
-  visit api_v1_api_key_path, :get
-  @api_key = response.body
+  page.driver.browser.basic_authorize(user, pass)
+  visit api_v1_api_key_path
+  @api_key = page.find("body").text
 end
 
 When /^I push the gem "([^\"]*)" with my api key$/ do |name|
@@ -78,7 +78,7 @@ When 'I request "$url"' do |url|
   visit url
 end
 
-When 'I list the gems with my api key' do
+When /I list the gems with my api key/ do
   api_key_header
-  visit api_v1_rubygems_path, :get
+  visit api_v1_rubygems_path
 end
