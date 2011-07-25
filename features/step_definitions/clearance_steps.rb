@@ -6,10 +6,6 @@ end
 
 # Database
 
-Given /^no user exists with an email of "(.*)"$/ do |email|
-  assert_nil User.find_by_email(email)
-end
-
 Given /^I signed up with "(.*)\/(.*)"$/ do |email, password|
   @me = user = Factory(:user,
     :email                 => email,
@@ -98,7 +94,7 @@ When /^I sign in as "(.*)\/(.*)"$/ do |email, password|
 end
 
 When /^I sign out$/ do
-  When %{I follow "Sign out"}
+  When %{I follow "sign out"}
 end
 
 When /^I request password reset link to be sent to "(.*)"$/ do |email|

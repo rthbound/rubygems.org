@@ -4,7 +4,7 @@ module ApiHelpers
   end
 
   def marshal_body
-    @_marshal_body ||= Marshal.load(page.body)
+    @_marshal_body ||= Marshal.load(page.source)
   end
 end
 
