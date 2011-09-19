@@ -62,6 +62,10 @@ RubygemsOrg::Application.configure do
     :domain => ".rubygems.org",
     :secure => true,
   }
+
+  # Compress both stylesheets and JavaScripts
+  config.assets.js_compressor  = :uglifier
+  config.assets.css_compressor = :scss
 end
 
 require Rails.root.join("config", "secret") if Rails.root.join("config", "secret.rb").file?
