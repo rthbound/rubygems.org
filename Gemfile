@@ -39,7 +39,6 @@ group :development, :test do
   gem 'guard'
   gem 'guard-cucumber'
   gem 'guard-bundler'
-  gem 'guard-test'
 end
 
 # These gems suck and do stupid things when in maintenance mode
