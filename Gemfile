@@ -11,6 +11,7 @@ gem 'gchartrb', :require => 'google_chart'
 gem 'gravtastic'
 gem 'high_voltage'
 gem 'hoptoad_notifier'
+gem 'jquery-rails'
 gem 'mail'
 gem 'newrelic_rpm'
 gem 'paul_revere'
@@ -21,6 +22,7 @@ gem 'rdoc'
 gem 'redis'
 gem 'rest-client', :require => 'rest_client'
 gem 'sinatra'
+gem 'sprockets'
 gem 'will_paginate'
 gem 'xml-simple'
 gem 'yajl-ruby', :require => 'yajl/json_gem'
@@ -44,12 +46,13 @@ end
 
 # These gems suck and do stupid things when in maintenance mode
 group :development, :test, :staging, :production do
-  gem 'delayed_job'
+  gem 'delayed_job', '3.0.0.pre'
+  gem 'delayed_job_active_record'
   gem 'validates_url_format_of'
 end
 
 group :test do
-  gem 'capybara', '~> 1.1'
+  gem 'capybara'
   gem 'cucumber-rails'
   gem 'database_cleaner'
   gem 'factory_girl_rails'
