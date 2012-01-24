@@ -32,8 +32,7 @@ Feature: Homepage
     And I push the gem "sandworm-1.0.0.gem" with my API key
     And I push the gem "sandworm-2.0.0.gem" with my API key
     And I push the gem "fireworm-1.0.0.gem" with my API key
-    
-    
+
     When I am on the homepage
     Then I should see the following just updated gems:
       | fireworm (1.0.0) |
